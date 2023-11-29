@@ -37,7 +37,12 @@ def handleClient(connection, address):
         filename = connection.recv(1024).decode('utf-8')
         print(f"Client requested a file upload to server...")
         print(f"Filename: {filename}...")
+        path = '../database/' + str(clientID)
+        if not os.path.exists(path):
+            os.mkdir(path)
         receiveFile(connection, filename, clientID)
+        print(f"File {filename} uploaded to the server.")
+
     elif requestArr[0] == 'DOWNLOAD':
         # Extract client ID
         clientID = requestArr[1]

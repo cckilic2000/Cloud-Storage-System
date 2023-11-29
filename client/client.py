@@ -2,7 +2,7 @@ import socket
 import os
 
 portNum = -1
-myID = -1
+myID = "-1"
 
 def uploadFile(connection, filename, id):
     # Send client choice to server
@@ -81,7 +81,7 @@ def main():
                 else:
                     # Extract port number and user id from master server message
                     portNum = int(reqArr[0])
-                    myID = int(reqArr[1])
+                    myID = str(reqArr[1])
                     print(f"Assigned port is {portNum}.")
                     print(f"My id is {myID}")
                     isLoggedIn = True

@@ -1,6 +1,8 @@
 import socket
 import threading
 import json
+from datetime import datetime
+from uuid import uuid4
 
 serverPorts = [1230,1231,1232,1233,1234,1235,1236,1237,1238,1239]
 numberOfServers = 0
@@ -56,7 +58,7 @@ def handleConn(conn, addr):
         # Read JSON file to check the provided user credentials
         jsonData = readJSON('userCredentials.json')
         users = jsonData['users']
-        userID = -1
+        userID = "-1"
 
         # Check credentials
         for i in range(len(users)):
@@ -65,7 +67,7 @@ def handleConn(conn, addr):
                 break
         
         # If user not found
-        if userID == -1:
+        if userID == "-1":
             print(f"{addr} provided wrong credentials")
             conn.send(b'WRONG_CREDENTIALS')
         # Check if there are any servers registered
@@ -92,8 +94,9 @@ def handleConn(conn, addr):
         password = reqArr[2]
 
         # Add new user to the database json file
-        jsonData = readJSON('userCredentials.json')        
-        newUser = [email , password , len(jsonData['users'])]
+        jsonData = readJSON('userCredentials.json')
+        newID = datetime.now().strftime('%Y%m%d%H%M%S%f') + str(uuid4())
+        newUser = [email , password , newID]
         jsonData['users'].append(newUser)
 
         # Write the updated data back to the JSON file
@@ -136,13 +139,6 @@ if __name__ == "__main__":
 ###############################
 # Test all cases/bug fix
 # UI for client
-###############################
-# Set user ids as datetime 
-    #from datetime import datetime
-    #from uuid import uuid4
-    #eventid = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
-###############################
-# New user open directory in the database???
 # Total storage limits for clients???
 # Where to store data??? Database directory seems primitive
 # Put user credentials in a database??? If we put them in a database we may not need to hash passwords
