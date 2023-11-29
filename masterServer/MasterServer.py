@@ -119,8 +119,8 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Before signup check if the user already exists
-# Handle if file doesnt exist in all choices
+# Before signup check if the user already exists and notify client if it does
+# Handle if file doesnt exist in all cases
 # Same user logging in twice
 # Take password twice
 # Make server port list infinite all servers should be registered
@@ -129,3 +129,10 @@ if __name__ == "__main__":
 # Use locks???
 # Test all cases/bug fix
 # UI for client
+###############################
+# Set user ids as datetime 
+    #from datetime import datetime
+    #from uuid import uuid4
+    #eventid = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
+###############################
+# New user open directory in the database???
