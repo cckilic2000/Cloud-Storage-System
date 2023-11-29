@@ -3,11 +3,13 @@ import threading
 import json
 from datetime import datetime
 from uuid import uuid4
+import bcrypt
 
 serverPorts = [1230,1231,1232,1233,1234,1235,1236,1237,1238,1239]
 numberOfServers = 0
 servers = []
 clientIndex = 0
+saltForHashing = b'$2b$12$PMWv6mC/0oWGBefn0sBWju'
 
 # Json file reader for user credentials
 def readJSON(file_path):
@@ -25,6 +27,7 @@ def handleConn(conn, addr):
     global numberOfServers
     global servers
     global clientIndex
+    global saltForHashing
 
     print(f"Connection received from address: {addr}...")
     # Receive identifier message
@@ -55,6 +58,9 @@ def handleConn(conn, addr):
         email = reqArr[1]
         password = reqArr[2]
 
+        # Getting hashed password
+        hashedPass = str(bcrypt.hashpw(str(password).encode('utf-8'), saltForHashing))
+
         # Read JSON file to check the provided user credentials
         jsonData = readJSON('userCredentials.json')
         users = jsonData['users']
@@ -62,7 +68,7 @@ def handleConn(conn, addr):
 
         # Check credentials
         for i in range(len(users)):
-            if email == users[i][0] and password == users[i][1]:
+            if email == users[i][0] and hashedPass == users[i][1]:
                 userID = users[i][2]
                 break
         
@@ -93,10 +99,15 @@ def handleConn(conn, addr):
         email = reqArr[1]
         password = reqArr[2]
 
+        # Hashing the password
+        hashedPass = str(bcrypt.hashpw(str(password).encode('utf-8'), saltForHashing))
+
         # Add new user to the database json file
         jsonData = readJSON('userCredentials.json')
         newID = datetime.now().strftime('%Y%m%d%H%M%S%f') + str(uuid4())
-        newUser = [email , password , newID]
+        
+        # Create user
+        newUser = [email , hashedPass , newID]
         jsonData['users'].append(newUser)
 
         # Write the updated data back to the JSON file
@@ -126,10 +137,8 @@ if __name__ == "__main__":
 # Handle if file doesnt exist in all cases
 # Same user logging in twice
 # Add logout functionality
-# Take password twice while signing up
 # Check type for email??? Is it really an email or not
 # Make server port list infinite all servers should be registered
-# Hash passwords???
 # Can we use userID without showing it to the client for security reasons
 # Delete file functionality
 ###############################

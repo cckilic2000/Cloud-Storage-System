@@ -88,21 +88,26 @@ def main():
                     break
 
             masterSocket.close()
+            # Sign up screen
         elif s == '2':
             # Getting user credentials
             email = input("Enter your email: ")
             password = input("Enter your password: ")
+            rePassword = input("Enter your password again: ")
 
-            # Connecting to master server to get assigned a port number
-            print(f"Connecting to master server...")
-            masterSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            masterSocket.connect(('localhost', 8888))
+            if password == rePassword:
+                # Connecting to master server to get assigned a port number
+                print(f"Connecting to master server...")
+                masterSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                masterSocket.connect(('localhost', 8888))
             
-            # Send user credentials to be added to the database
-            msg = 'SIGN_UP/' + email + '/' + password
-            masterSocket.send(msg.encode('utf-8'))
+                # Send user credentials to be added to the database
+                msg = 'SIGN_UP/' + email + '/' + password
+                masterSocket.send(msg.encode('utf-8'))
 
-            masterSocket.close()
+                masterSocket.close()
+            else:
+                print(f"Passwords don't match please try again.")
 
     if not (portNum == -1):
         # Establish connection
