@@ -105,6 +105,14 @@ def main():
                 msg = 'SIGN_UP/' + email + '/' + password
                 masterSocket.send(msg.encode('utf-8'))
 
+                # Receive response from MasterServer
+                req = masterSocket.recv(1024).decode('utf-8')
+
+                if req == 'SIGNUP_COMPLETE':
+                    print(f"Sign up successful.")
+                elif req == 'SIGNUP_FAIL':
+                    print(f"This email is already registered.")
+
                 masterSocket.close()
             else:
                 print(f"Passwords don't match please try again.")

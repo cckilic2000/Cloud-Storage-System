@@ -99,19 +99,34 @@ def handleConn(conn, addr):
         email = reqArr[1]
         password = reqArr[2]
 
-        # Hashing the password
-        hashedPass = str(bcrypt.hashpw(str(password).encode('utf-8'), saltForHashing))
-
-        # Add new user to the database json file
+        # Read the JSON file
         jsonData = readJSON('userCredentials.json')
-        newID = datetime.now().strftime('%Y%m%d%H%M%S%f') + str(uuid4())
-        
-        # Create user
-        newUser = [email , hashedPass , newID]
-        jsonData['users'].append(newUser)
 
-        # Write the updated data back to the JSON file
-        writeJSON('userCredentials.json', jsonData)
+        # Check if the user already exists
+        doesExists = False
+        for i in range(len(jsonData['users'])):
+            if email == jsonData['users'][i][0]:
+                doesExists = True
+                break
+
+        if not doesExists:
+            # Hashing the password
+            hashedPass = str(bcrypt.hashpw(str(password).encode('utf-8'), saltForHashing))
+
+            # Generate new id for the user
+            newID = datetime.now().strftime('%Y%m%d%H%M%S%f') + str(uuid4())
+        
+            # Create user
+            newUser = [email , hashedPass , newID]
+            jsonData['users'].append(newUser)
+
+            # Write the updated data back to the JSON file
+            writeJSON('userCredentials.json', jsonData)
+
+            # Notify user
+            conn.send(b'SIGNUP_COMPLETE')
+        else:
+            conn.send(b'SIGNUP_FAIL')
 
     conn.close()
 
@@ -133,21 +148,22 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Before signup check if the user already exists and notify client if it does
 # Handle if file doesnt exist in all cases
-# Same user logging in twice
+# Handle if file already exists--change name to example.txt to example1.txt
 # Add logout functionality
-# Check type for email??? Is it really an email or not
-# Make server port list infinite all servers should be registered
-# Can we use userID without showing it to the client for security reasons
 # Delete file functionality
+# Check type for email??? Is it really an email or not
+# Total storage limits for clients???
 ###############################
 # Use locks???
     # MasterServer global variables
     # Server database files
 ###############################
+# Can we use userID without showing it to the client for security reasons
 # Test all cases/bug fix
 # UI for client
-# Total storage limits for clients???
 # Where to store data??? Database directory seems primitive
-# Put user credentials in a database??? If we put them in a database we may not need to hash passwords
+# Put user credentials in a database???
+
+# Passwords for users cihan, dilay, furkan: 1234
+# Passwords for user test@gmail.com: 12345
