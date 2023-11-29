@@ -122,6 +122,7 @@ if __name__ == "__main__":
 # Before signup check if the user already exists and notify client if it does
 # Handle if file doesnt exist in all cases
 # Same user logging in twice
+# Add logout functionality
 # Take password twice while signing up
 # Check type for email??? Is it really an email or not
 # Make server port list infinite all servers should be registered
