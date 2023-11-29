@@ -122,11 +122,17 @@ if __name__ == "__main__":
 # Before signup check if the user already exists and notify client if it does
 # Handle if file doesnt exist in all cases
 # Same user logging in twice
-# Take password twice
+# Take password twice while signing up
+# Check type for email??? Is it really an email or not
 # Make server port list infinite all servers should be registered
 # Hash passwords???
 # Can we use userID without showing it to the client for security reasons
+# Delete file functionality
+###############################
 # Use locks???
+    # MasterServer global variables
+    # Server database files
+###############################
 # Test all cases/bug fix
 # UI for client
 ###############################
@@ -136,3 +142,6 @@ if __name__ == "__main__":
     #eventid = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
 ###############################
 # New user open directory in the database???
+# Total storage limits for clients???
+# Where to store data??? Database directory seems primitive
+# Put user credentials in a database??? If we put them in a database we may not need to hash passwords
