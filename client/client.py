@@ -1,5 +1,4 @@
 import socket
-import os
 
 portNum = -1
 myID = "-1"
@@ -28,8 +27,8 @@ def downloadFile(connection, filename, id):
     connection.send(filename.encode('utf-8'))
 
     # Get the downloaded file if it exists
-    response = connection.recv(1024)
-    if response == b'OK':
+    response = connection.recv(1024).decode('utf-8')
+    if response == 'OK':
         with open(filename, 'wb') as file:
             while True:
                 data = connection.recv(1024)
@@ -39,6 +38,41 @@ def downloadFile(connection, filename, id):
         print(f"File {filename} downloaded and stored.")
     else:
         print(f"File {filename} not found on the server.")
+
+def listFiles(connection, id):
+    # Send client choice to server
+    msg = 'LIST/' + str(id)
+    connection.send(msg.encode('utf-8'))
+
+    # Get the filename list
+    response = connection.recv(1024).decode('utf-8')
+    resArr = str(response).split('/')
+
+    # For spacing
+    print(f"\n")
+
+    if resArr[0] == 'EMPTY':
+        print(f"The storage is empty.")
+    elif resArr[0] ==  'OK':
+        for i in range(1, len(resArr), 1):
+            print(f"{i}. {str(resArr[i])}")
+
+    # For spacing
+    print(f"\n")
+
+def deleteFile(connection, filename, id):
+    # Send client choice to server
+    msg = 'DELETE/' + str(id)
+    connection.send(msg.encode('utf-8'))
+    # Send filename to server
+    connection.send(filename.encode('utf-8'))
+    
+    # Get the response from the server
+    response = connection.recv(1024).decode('utf-8')
+    if response == 'OK':
+        print(f"File deleted successfully.")
+    elif response == 'ERROR':
+        print(f"Specified file doesn't exist or couldn't be deleted.")
 
 def main():
     global portNum
@@ -132,7 +166,7 @@ def main():
                 clientSocket.connect(('localhost', portNum))
                 isReconnect = False
 
-            print("\n1. Upload file\n2. Download file\n3. Quit")
+            print("\n1. Upload file\n2. Download file\n3. List my files\n4. Delete file\n5. Log out")
             choice = input("Enter your choice: ")
 
             # Handle client choice
@@ -153,6 +187,21 @@ def main():
                 clientSocket.close()
                 isReconnect = True
             elif choice == '3':
+                listFiles(clientSocket, myID)
+
+                # close connection to finish transaction then reconnect
+                clientSocket.close()
+                isReconnect = True
+            elif choice == '4':
+                # Get filename and call delete func
+                filename = input("Enter the name of the file to delete: ")
+                deleteFile(clientSocket, filename, myID)
+
+                # close connection to finish transaction then reconnect
+                clientSocket.close()
+                isReconnect = True
+
+            elif choice == '5':
                 # Exit
                 break
             else:

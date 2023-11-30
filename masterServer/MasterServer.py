@@ -150,8 +150,6 @@ if __name__ == "__main__":
 
 # Handle if file doesnt exist in all cases
 # Handle if file already exists--change name to example.txt to example1.txt
-# Add logout functionality
-# Delete file functionality
 # Check type for email??? Is it really an email or not
 # Total storage limits for clients???
 ###############################

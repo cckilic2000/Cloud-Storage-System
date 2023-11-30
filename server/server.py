@@ -33,6 +33,7 @@ def handleClient(connection, address):
     if requestArr[0] == 'UPLOAD':
         # Extract client ID
         clientID = requestArr[1]
+        
         # Recieve filename and call receive file func
         filename = connection.recv(1024).decode('utf-8')
         print(f"Client requested a file upload to server...")
@@ -46,6 +47,7 @@ def handleClient(connection, address):
     elif requestArr[0] == 'DOWNLOAD':
         # Extract client ID
         clientID = requestArr[1]
+        
         # Recieve filename and call send file func if file exist
         filename = connection.recv(1024).decode('utf-8')
         print(f"Client requested a file download from server...")
@@ -56,6 +58,48 @@ def handleClient(connection, address):
             connection.send(b'OK')
             sendFile(connection, filename, clientID)
             print(f"File {filename} sent to the client.")
+        else:
+            connection.send(b'ERROR')
+            print(f"File {filename} not found on the server.")
+
+    elif requestArr[0] == 'LIST':
+        # Extract client ID
+        clientID = requestArr[1]
+
+        print(f"Client requested a file list from server...")
+
+        # Construct the path
+        path = '../database/' + str(clientID)
+        if os.path.exists(path):
+            if len(os.listdir(path)) == 0:
+                connection.send(b'EMPTY')
+                print(f"Requested file list is empty.")
+            else:
+                dirList = os.listdir(path)
+                files = 'OK'
+                for i in range(0, len(dirList), 1):
+                    files = files + '/' + str(dirList[i])
+                connection.send(str(files).encode('utf-8'))
+                print(f"File  list is sent to client.")
+        else:
+            connection.send(b'EMPTY')
+            print(f"Requested file list is empty.")
+
+    elif requestArr[0] == 'DELETE':
+        # Extract client ID
+        clientID = requestArr[1]
+
+        # Recieve filename and call delete file func if file exist
+        filename = connection.recv(1024).decode('utf-8')
+        print(f"Client requested a file delete from server...")
+        print(f"Filename: {filename}...")
+        path = '../database/' + str(clientID) + '/' + str(filename)
+
+        if os.path.exists(path):
+            # Delete file if exists
+            os.remove(path)
+            print(f"File {filename} deleted from the server.")
+            connection.send(b'OK')
         else:
             connection.send(b'ERROR')
             print(f"File {filename} not found on the server.")
