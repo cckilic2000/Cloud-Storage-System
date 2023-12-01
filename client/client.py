@@ -1,4 +1,5 @@
 import socket
+import os
 
 portNum = -1
 myID = "-1"
@@ -7,15 +8,22 @@ def uploadFile(connection, filename, id):
     # Send client choice to server
     msg = 'UPLOAD/' + str(id)
     connection.send(msg.encode('utf-8'))
-    # Send filename to server
-    connection.send(filename.encode('utf-8'))
-    
-    # Open file and send it in 1024 chunks
-    with open(filename, 'rb') as file:
-        data = file.read(1024)
-        while data:
-            connection.send(data)
+    # Send filename and size to server
+    size = int(os.path.getsize(filename))
+    msg = str(filename) + '/' + str(size)
+    connection.send(msg.encode('utf-8'))
+
+    response = connection.recv(1024).decode('utf-8')
+    if response == 'OK':
+        # Open file and send it in 1024 chunks
+        with open(filename, 'rb') as file:
             data = file.read(1024)
+            while data:
+                connection.send(data)
+                data = file.read(1024)
+        print(f"File {filename} sent.")
+    elif response == 'ERROR':
+        print(f"Uploading file {filename} exceeds your storage limit.")
 
 def downloadFile(connection, filename, id):
     # Send client choice to server

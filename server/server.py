@@ -6,25 +6,25 @@ import json
 portNum = -1
 
 # Server file receive function
-def receiveFile(connection, filename, id):
-    path = '../database/' + str(id) + '/' + str(filename)
-    with open(path, 'wb') as file:
-        while True:
-            data = connection.recv(1024)
-            if not data:
-                break
-            file.write(data)
-
+def receiveFile(connection, filename, fileSize, id):
     # Read storage size from size.json
-    fileSize = os.path.getsize(path)
     dirSize = 0
     with open('../database/' + str(id) + '/size.json', 'r') as file:
         dataJson = json.load(file)
-        dirSize = int(dataJson['size']) + fileSize
+        dirSize = int(dataJson['size']) + int(fileSize)
 
     # Check if the storage limit is exceeded
     if int(dirSize) <=  104857600: # 10 MB
         print(f"File {filename} received and stored.")
+        connection.send(b'OK')
+
+        path = '../database/' + str(id) + '/' + str(filename)
+        with open(path, 'wb') as file:
+            while True:
+                data = connection.recv(1024)
+                if not data:
+                    break
+                file.write(data)
 
         # Update size.json
         sizeJson = {"size":str(dirSize)}
@@ -32,8 +32,7 @@ def receiveFile(connection, filename, id):
         with open('../database/' + str(id) + '/size.json',"w") as file:
             file.write(jsonObj)
     else:
-        path = '../database/' + str(id) + '/' + str(filename)
-        os.remove(path)
+        connection.send(b'ERROR')
         print(f"File {filename} not stored. Limit exceeded.")
 
 # Server file send function
@@ -56,7 +55,10 @@ def handleClient(connection, address):
         clientID = requestArr[1]
         
         # Recieve filename
-        filename = connection.recv(1024).decode('utf-8')
+        param = connection.recv(1024).decode('utf-8')
+        filenameAndSize = str(param).split('/')
+        filename = filenameAndSize[0]
+        fileSize = filenameAndSize[1]
         print(f"Client requested a file upload to server...")
         print(f"Filename: {filename}...")
 
@@ -80,7 +82,7 @@ def handleClient(connection, address):
             counter = counter + 1
 
         # Receive file
-        receiveFile(connection, filename, clientID)
+        receiveFile(connection, filename, fileSize, clientID)
 
     elif requestArr[0] == 'DOWNLOAD':
         # Extract client ID

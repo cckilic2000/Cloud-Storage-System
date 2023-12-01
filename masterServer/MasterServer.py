@@ -148,9 +148,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Rename functionality
 # Server unregister port number when closed???
-# Upload not sending response message from server to client
 # Upload directory functionality
 # User creates directory structure
 ###############################
