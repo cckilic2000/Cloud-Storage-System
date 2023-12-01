@@ -148,8 +148,9 @@ def main():
 if __name__ == "__main__":
     main()
 
+# Rename functionality
+# Server unregister port number when closed???
 # Upload not sending response message from server to client
-# When file is deleted subtract from size.json
 # Upload directory functionality
 # User creates directory structure
 ###############################
@@ -157,10 +158,8 @@ if __name__ == "__main__":
     # MasterServer global variables
     # Server database files
 ###############################
-# Can we use userID without showing it to the client for security reasons or use addr of client in server
 # Test all cases/bug fix
 # UI for client
-# Where to store data??? Database directory seems primitive
 
 # Passwords for users cihan, dilay, furkan: 1234
 # Passwords for user test@gmail.com: 12345

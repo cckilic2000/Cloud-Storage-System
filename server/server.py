@@ -8,16 +8,15 @@ portNum = -1
 # Server file receive function
 def receiveFile(connection, filename, id):
     path = '../database/' + str(id) + '/' + str(filename)
-    fileSize = 0
     with open(path, 'wb') as file:
         while True:
             data = connection.recv(1024)
             if not data:
                 break
             file.write(data)
-            fileSize += 1024
 
     # Read storage size from size.json
+    fileSize = os.path.getsize(path)
     dirSize = 0
     with open('../database/' + str(id) + '/size.json', 'r') as file:
         dataJson = json.load(file)
@@ -140,6 +139,20 @@ def handleClient(connection, address):
         path = '../database/' + str(clientID) + '/' + str(filename)
 
         if os.path.exists(path) and filename != 'size.json':
+            # Reduce size.json by filesize
+            delSize = os.path.getsize(path)
+
+            dirSize = 0
+            with open('../database/' + str(clientID) + '/size.json', 'r') as file:
+                dataJson = json.load(file)
+                dirSize = int(dataJson['size']) - delSize
+            
+            # Update size.json
+            sizeJson = {"size":str(dirSize)}
+            jsonObj = json.dumps(sizeJson, indent=2)
+            with open('../database/' + str(clientID) + '/size.json',"w") as file:
+                file.write(jsonObj)
+
             # Delete file if exists
             os.remove(path)
             print(f"File {filename} deleted from the server.")
