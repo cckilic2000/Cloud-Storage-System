@@ -1,19 +1,41 @@
 import socket
 import threading
 import os
+import json
 
 portNum = -1
 
 # Server file receive function
 def receiveFile(connection, filename, id):
     path = '../database/' + str(id) + '/' + str(filename)
+    fileSize = 0
     with open(path, 'wb') as file:
         while True:
             data = connection.recv(1024)
             if not data:
                 break
             file.write(data)
+            fileSize += 1024
+
+    # Read storage size from size.json
+    dirSize = 0
+    with open('../database/' + str(id) + '/size.json', 'r') as file:
+        dataJson = json.load(file)
+        dirSize = int(dataJson['size']) + fileSize
+
+    # Check if the storage limit is exceeded
+    if int(dirSize) <=  104857600: # 10 MB
         print(f"File {filename} received and stored.")
+
+        # Update size.json
+        sizeJson = {"size":str(dirSize)}
+        jsonObj = json.dumps(sizeJson, indent=2)
+        with open('../database/' + str(id) + '/size.json',"w") as file:
+            file.write(jsonObj)
+    else:
+        path = '../database/' + str(id) + '/' + str(filename)
+        os.remove(path)
+        print(f"File {filename} not stored. Limit exceeded.")
 
 # Server file send function
 def sendFile(connection, filename, id):
@@ -34,15 +56,32 @@ def handleClient(connection, address):
         # Extract client ID
         clientID = requestArr[1]
         
-        # Recieve filename and call receive file func
+        # Recieve filename
         filename = connection.recv(1024).decode('utf-8')
         print(f"Client requested a file upload to server...")
         print(f"Filename: {filename}...")
+
+        # Check if the client has a directory or not
         path = '../database/' + str(clientID)
         if not os.path.exists(path):
             os.mkdir(path)
+            # Create size file
+            sizeJson = {"size":"0"}
+            jsonObj = json.dumps(sizeJson, indent=2)
+            with open(path + "/size.json","w") as file:
+                file.write(jsonObj)
+
+        # Check if there is already a file with the provided files name
+        path = '../database/' + str(clientID) + '/' + str(filename)
+        base , extension = os.path.splitext(filename)
+        counter = 1
+        while os.path.exists(path):
+            filename = str(base) + str(counter) + str(extension)
+            path = '../database/' + str(clientID) + '/' + str(filename)
+            counter = counter + 1
+
+        # Receive file
         receiveFile(connection, filename, clientID)
-        print(f"File {filename} uploaded to the server.")
 
     elif requestArr[0] == 'DOWNLOAD':
         # Extract client ID
@@ -50,17 +89,21 @@ def handleClient(connection, address):
         
         # Recieve filename and call send file func if file exist
         filename = connection.recv(1024).decode('utf-8')
-        print(f"Client requested a file download from server...")
-        print(f"Filename: {filename}...")
-        path = '../database/' + str(clientID) + '/' + str(filename)
-        if os.path.exists(path):
-            # Send file if exists
-            connection.send(b'OK')
-            sendFile(connection, filename, clientID)
-            print(f"File {filename} sent to the client.")
+
+        if filename != 'size.json':
+            print(f"Client requested a file download from server...")
+            print(f"Filename: {filename}...")
+            path = '../database/' + str(clientID) + '/' + str(filename)
+            if os.path.exists(path):
+                # Send file if exists
+                connection.send(b'OK')
+                sendFile(connection, filename, clientID)
+                print(f"File {filename} sent to the client.")
+            else:
+                connection.send(b'ERROR')
+                print(f"File {filename} not found on the server.")
         else:
             connection.send(b'ERROR')
-            print(f"File {filename} not found on the server.")
 
     elif requestArr[0] == 'LIST':
         # Extract client ID
@@ -78,7 +121,8 @@ def handleClient(connection, address):
                 dirList = os.listdir(path)
                 files = 'OK'
                 for i in range(0, len(dirList), 1):
-                    files = files + '/' + str(dirList[i])
+                    if str(dirList[i]) != 'size.json':
+                        files = files + '/' + str(dirList[i])
                 connection.send(str(files).encode('utf-8'))
                 print(f"File  list is sent to client.")
         else:
@@ -95,7 +139,7 @@ def handleClient(connection, address):
         print(f"Filename: {filename}...")
         path = '../database/' + str(clientID) + '/' + str(filename)
 
-        if os.path.exists(path):
+        if os.path.exists(path) and filename != 'size.json':
             # Delete file if exists
             os.remove(path)
             print(f"File {filename} deleted from the server.")

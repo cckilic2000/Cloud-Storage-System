@@ -148,20 +148,19 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Handle if file doesnt exist in all cases
-# Handle if file already exists--change name to example.txt to example1.txt
-# Check type for email??? Is it really an email or not
-# Total storage limits for clients???
+# Upload not sending response message from server to client
+# When file is deleted subtract from size.json
+# Upload directory functionality
+# User creates directory structure
 ###############################
 # Use locks???
     # MasterServer global variables
     # Server database files
 ###############################
-# Can we use userID without showing it to the client for security reasons
+# Can we use userID without showing it to the client for security reasons or use addr of client in server
 # Test all cases/bug fix
 # UI for client
 # Where to store data??? Database directory seems primitive
-# Put user credentials in a database???
 
 # Passwords for users cihan, dilay, furkan: 1234
 # Passwords for user test@gmail.com: 12345

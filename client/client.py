@@ -17,8 +17,6 @@ def uploadFile(connection, filename, id):
             connection.send(data)
             data = file.read(1024)
 
-    print(f"File {filename} uploaded to the server.")
-
 def downloadFile(connection, filename, id):
     # Send client choice to server
     msg = 'DOWNLOAD/' + str(id)
