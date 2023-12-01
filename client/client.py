@@ -72,6 +72,21 @@ def deleteFile(connection, filename, id):
     elif response == 'ERROR':
         print(f"Specified file doesn't exist or couldn't be deleted.")
 
+def renameFile(connection, filename, newFilename, id):
+    # Send client choice to server
+    msg = 'RENAME/' + str(id)
+    connection.send(msg.encode('utf-8'))
+    # Send filenames to server
+    filenames = str(filename) + '/' + str(newFilename)
+    connection.send(filenames.encode('utf-8'))
+
+    # Get the response from the server
+    response = connection.recv(1024).decode('utf-8')
+    if response == 'OK':
+        print(f"Filename changed successfully.")
+    elif response == 'ERROR':
+        print(f"Unable to change filename to specified name.")
+
 def main():
     global portNum
     global myID
@@ -164,7 +179,7 @@ def main():
                 clientSocket.connect(('localhost', portNum))
                 isReconnect = False
 
-            print("\n1. Upload file\n2. Download file\n3. List my files\n4. Delete file\n5. Log out")
+            print("\n1. Upload file\n2. Download file\n3. List my files\n4. Delete file\n5. Rename a file\n6. Log out")
             choice = input("Enter your choice: ")
 
             # Handle client choice
@@ -198,8 +213,16 @@ def main():
                 # close connection to finish transaction then reconnect
                 clientSocket.close()
                 isReconnect = True
-
             elif choice == '5':
+                # Get the filename and new filename and call func
+                filename = input("Enter the name of the file to rename: ")
+                newFilename = input("Enter the new name of the file: ")
+                renameFile(clientSocket, filename, newFilename, myID)
+
+                # close connection to finish transaction then reconnect
+                clientSocket.close()
+                isReconnect = True
+            elif choice == '6':
                 # Exit
                 break
             else:

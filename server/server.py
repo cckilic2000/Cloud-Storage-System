@@ -160,6 +160,30 @@ def handleClient(connection, address):
         else:
             connection.send(b'ERROR')
             print(f"File {filename} not found on the server.")
+    elif requestArr[0] == 'RENAME':
+        # Extract client ID
+        clientID = requestArr[1]
+
+        # Receive filenames
+        filenames = connection.recv(1024).decode('utf-8')
+        filenamesArr = str(filenames).split('/')
+        print(f"Client requested a file rename from server...")
+        print(f"Filename: {filenamesArr[0]}, New Filename: {filenamesArr[1]}...")
+        
+        # Form paths
+        baseOld , extension = os.path.splitext(filenamesArr[0])
+        baseNew , extensionNew = os.path.splitext(filenamesArr[1])
+        newFilename = str(baseNew) + str(extension)
+        pathOld = '../database/' + str(clientID) + '/' + str(filenamesArr[0])
+        pathNew = '../database/' + str(clientID) + '/' + str(newFilename)
+
+        if os.path.exists(pathOld) and filenamesArr[0] != 'size.json' and newFilename != 'size.json' and not os.path.exists(pathNew):
+            os.rename(pathOld,pathNew)
+            connection.send(b'OK')
+            print(f"Rename from {filenamesArr[0]} to {newFilename} is successfull.")
+        else:
+            connection.send(b'ERROR')
+            print(f"Unable to rename file {filenamesArr[0]} to {filenamesArr[1]}.")
 
     connection.close()
 
