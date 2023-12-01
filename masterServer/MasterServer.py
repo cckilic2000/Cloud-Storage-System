@@ -158,10 +158,6 @@ if __name__ == "__main__":
 # Server unregister port number when closed???
 # Upload directory functionality
 # User creates directory structure
-###############################
-# Use locks???
-    # Server database files
-###############################
 # Test all cases/bug fix
 # UI for client
 

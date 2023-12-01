@@ -4,33 +4,37 @@ import os
 import json
 
 portNum = -1
+lock = threading.Lock()
 
 # Server file receive function
-def receiveFile(connection, filename, fileSize, id):
+def receiveFile(connection, filename, fileSize, id, lock):
     # Read storage size from size.json
     dirSize = 0
-    with open('../database/' + str(id) + '/size.json', 'r') as file:
-        dataJson = json.load(file)
-        dirSize = int(dataJson['size']) + int(fileSize)
+    with lock:
+        with open('../database/' + str(id) + '/size.json', 'r') as file:
+            dataJson = json.load(file)
+            dirSize = int(dataJson['size']) + int(fileSize)
 
     # Check if the storage limit is exceeded
     if int(dirSize) <=  104857600: # 10 MB
         print(f"File {filename} received and stored.")
         connection.send(b'OK')
 
-        path = '../database/' + str(id) + '/' + str(filename)
-        with open(path, 'wb') as file:
-            while True:
-                data = connection.recv(1024)
-                if not data:
-                    break
-                file.write(data)
+        with lock:
+            path = '../database/' + str(id) + '/' + str(filename)
+            with open(path, 'wb') as file:
+                while True:
+                    data = connection.recv(1024)
+                    if not data:
+                        break
+                    file.write(data)
 
         # Update size.json
         sizeJson = {"size":str(dirSize)}
         jsonObj = json.dumps(sizeJson, indent=2)
-        with open('../database/' + str(id) + '/size.json',"w") as file:
-            file.write(jsonObj)
+        with lock:
+            with open('../database/' + str(id) + '/size.json',"w") as file:
+                file.write(jsonObj)
     else:
         connection.send(b'ERROR')
         print(f"File {filename} not stored. Limit exceeded.")
@@ -44,7 +48,7 @@ def sendFile(connection, filename, id):
             connection.send(data)
             data = file.read(1024)
 
-def handleClient(connection, address):
+def handleClient(connection, address, lock):
     print(f"Connection from {address}...")
 
     # Read the first request which is the clients choice of either downlaod or upload
@@ -62,27 +66,28 @@ def handleClient(connection, address):
         print(f"Client requested a file upload to server...")
         print(f"Filename: {filename}...")
 
-        # Check if the client has a directory or not
-        path = '../database/' + str(clientID)
-        if not os.path.exists(path):
-            os.mkdir(path)
-            # Create size file
-            sizeJson = {"size":"0"}
-            jsonObj = json.dumps(sizeJson, indent=2)
-            with open(path + "/size.json","w") as file:
-                file.write(jsonObj)
+        with lock:
+            # Check if the client has a directory or not
+            path = '../database/' + str(clientID)
+            if not os.path.exists(path):
+                os.mkdir(path)
+                # Create size file
+                sizeJson = {"size":"0"}
+                jsonObj = json.dumps(sizeJson, indent=2)
+                with open(path + "/size.json","w") as file:
+                    file.write(jsonObj)
 
-        # Check if there is already a file with the provided files name
-        path = '../database/' + str(clientID) + '/' + str(filename)
-        base , extension = os.path.splitext(filename)
-        counter = 1
-        while os.path.exists(path):
-            filename = str(base) + str(counter) + str(extension)
+            # Check if there is already a file with the provided files name
             path = '../database/' + str(clientID) + '/' + str(filename)
-            counter = counter + 1
+            base , extension = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(path):
+                filename = str(base) + str(counter) + str(extension)
+                path = '../database/' + str(clientID) + '/' + str(filename)
+                counter = counter + 1
 
         # Receive file
-        receiveFile(connection, filename, fileSize, clientID)
+        receiveFile(connection, filename, fileSize, clientID, lock)
 
     elif requestArr[0] == 'DOWNLOAD':
         # Extract client ID
@@ -95,14 +100,16 @@ def handleClient(connection, address):
             print(f"Client requested a file download from server...")
             print(f"Filename: {filename}...")
             path = '../database/' + str(clientID) + '/' + str(filename)
-            if os.path.exists(path):
-                # Send file if exists
-                connection.send(b'OK')
-                sendFile(connection, filename, clientID)
-                print(f"File {filename} sent to the client.")
-            else:
-                connection.send(b'ERROR')
-                print(f"File {filename} not found on the server.")
+            
+            with lock:
+                if os.path.exists(path):
+                    # Send file if exists
+                    connection.send(b'OK')
+                    sendFile(connection, filename, clientID)
+                    print(f"File {filename} sent to the client.")
+                else:
+                    connection.send(b'ERROR')
+                    print(f"File {filename} not found on the server.")
         else:
             connection.send(b'ERROR')
 
@@ -140,28 +147,29 @@ def handleClient(connection, address):
         print(f"Filename: {filename}...")
         path = '../database/' + str(clientID) + '/' + str(filename)
 
-        if os.path.exists(path) and filename != 'size.json':
-            # Reduce size.json by filesize
-            delSize = os.path.getsize(path)
+        with lock:
+            if os.path.exists(path) and filename != 'size.json':
+                # Reduce size.json by filesize
+                delSize = os.path.getsize(path)
 
-            dirSize = 0
-            with open('../database/' + str(clientID) + '/size.json', 'r') as file:
-                dataJson = json.load(file)
-                dirSize = int(dataJson['size']) - delSize
+                dirSize = 0
+                with open('../database/' + str(clientID) + '/size.json', 'r') as file:
+                    dataJson = json.load(file)
+                    dirSize = int(dataJson['size']) - delSize
             
-            # Update size.json
-            sizeJson = {"size":str(dirSize)}
-            jsonObj = json.dumps(sizeJson, indent=2)
-            with open('../database/' + str(clientID) + '/size.json',"w") as file:
-                file.write(jsonObj)
+                # Update size.json
+                sizeJson = {"size":str(dirSize)}
+                jsonObj = json.dumps(sizeJson, indent=2)
+                with open('../database/' + str(clientID) + '/size.json',"w") as file:
+                    file.write(jsonObj)
 
-            # Delete file if exists
-            os.remove(path)
-            print(f"File {filename} deleted from the server.")
-            connection.send(b'OK')
-        else:
-            connection.send(b'ERROR')
-            print(f"File {filename} not found on the server.")
+                # Delete file if exists
+                os.remove(path)
+                print(f"File {filename} deleted from the server.")
+                connection.send(b'OK')
+            else:
+                connection.send(b'ERROR')
+                print(f"File {filename} not found on the server.")
     elif requestArr[0] == 'RENAME':
         # Extract client ID
         clientID = requestArr[1]
@@ -179,18 +187,21 @@ def handleClient(connection, address):
         pathOld = '../database/' + str(clientID) + '/' + str(filenamesArr[0])
         pathNew = '../database/' + str(clientID) + '/' + str(newFilename)
 
-        if os.path.exists(pathOld) and filenamesArr[0] != 'size.json' and newFilename != 'size.json' and not os.path.exists(pathNew):
-            os.rename(pathOld,pathNew)
-            connection.send(b'OK')
-            print(f"Rename from {filenamesArr[0]} to {newFilename} is successfull.")
-        else:
-            connection.send(b'ERROR')
-            print(f"Unable to rename file {filenamesArr[0]} to {filenamesArr[1]}.")
+        with lock:
+            if os.path.exists(pathOld) and filenamesArr[0] != 'size.json' and newFilename != 'size.json' and not os.path.exists(pathNew):
+                os.rename(pathOld,pathNew)
+                connection.send(b'OK')
+                print(f"Rename from {filenamesArr[0]} to {newFilename} is successfull.")
+            else:
+                connection.send(b'ERROR')
+                print(f"Unable to rename file {filenamesArr[0]} to {filenamesArr[1]}.")
 
     connection.close()
 
 def main():
     global portNum
+    global lock
+
     # Connecting to master server to get assigned a port number
     print(f"Connecting to master server...")
     masterSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -222,7 +233,7 @@ def main():
         while True:
             # Start client thread when a client connects
             conn, addr = serverSocket.accept()
-            clientThread = threading.Thread(target=handleClient, args=(conn, addr))
+            clientThread = threading.Thread(target=handleClient, args=(conn, addr, lock))
             clientThread.start()
 
 
