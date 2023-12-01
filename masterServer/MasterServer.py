@@ -10,6 +10,7 @@ numberOfServers = 0
 servers = []
 clientIndex = 0
 saltForHashing = b'$2b$12$PMWv6mC/0oWGBefn0sBWju'
+lock = threading.Lock()
 
 # Json file reader for user credentials
 def readJSON(file_path):
@@ -22,7 +23,7 @@ def writeJSON(file_path, data):
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=2)
 
-def handleConn(conn, addr):
+def handleConn(conn, addr, lock):
     global serverPorts
     global numberOfServers
     global servers
@@ -38,19 +39,20 @@ def handleConn(conn, addr):
     if reqArr[0] == 'SERVER_REGISTRATION':
         print(f"{addr} is requesting server registration...")
         
-        # Check if there exist free ports
-        if numberOfServers == 10:
-            print(f"All ports are occupied at the moment.")
-            # Send all ports are occupied message
-            conn.send(b'PORTS_FULL')
-        elif numberOfServers < 10:
-            # Send the port number to the server
-            portNum = serverPorts[numberOfServers]
-            print(f"Port number {portNum} is registered to server {addr}.")
-            numberOfServers = numberOfServers + 1
-            servers.append(portNum)
-            msg = str(portNum)
-            conn.send(msg.encode('utf-8'))
+        with lock:
+            # Check if there exist free ports
+            if numberOfServers == 10:
+                print(f"All ports are occupied at the moment.")
+                # Send all ports are occupied message
+                conn.send(b'PORTS_FULL')
+            elif numberOfServers < 10:
+                # Send the port number to the server
+                portNum = serverPorts[numberOfServers]
+                print(f"Port number {portNum} is registered to server {addr}.")
+                numberOfServers = numberOfServers + 1
+                servers.append(portNum)
+                msg = str(portNum)
+                conn.send(msg.encode('utf-8'))
     elif reqArr[0] == 'CLIENT_REGISTRATION':
         print(f"{addr} is requesting client registration...")
 
@@ -72,26 +74,28 @@ def handleConn(conn, addr):
                 userID = users[i][2]
                 break
         
-        # If user not found
-        if userID == "-1":
-            print(f"{addr} provided wrong credentials")
-            conn.send(b'WRONG_CREDENTIALS')
-        # Check if there are any servers registered
-        elif len(servers) == 0:
-            print(f"No servers are registered at the moment.")
-            # Send no servers to connect message
-            conn.send(b'NO_SERVERS')
-        elif len(servers) > 0:
-            # Send the port number to the client
-            portNum = servers[clientIndex]
-            print(f"Port number {portNum} is registered to client {addr}.")
-            clientIndex = clientIndex + 1
-            if clientIndex == len(servers):
-                clientIndex = 0
+        with lock:
+            # If user not found
+            if userID == "-1":
+                print(f"{addr} provided wrong credentials")
+                conn.send(b'WRONG_CREDENTIALS')
+            # Check if there are any servers registered
+            elif len(servers) == 0:
+                print(f"No servers are registered at the moment.")
+                # Send no servers to connect message
+                conn.send(b'NO_SERVERS')
+            elif len(servers) > 0:
+                # Check client index
+                if clientIndex == len(servers):
+                    clientIndex = 0
+                # Send the port number to the client
+                portNum = servers[clientIndex]
+                print(f"Port number {portNum} is registered to client {addr}.")
+                clientIndex = clientIndex + 1
 
-            # Send port and userId informarion to the client
-            msg = str(portNum) + '/' + str(userID)
-            conn.send(msg.encode('utf-8'))
+                # Send port and userId informarion to the client
+                msg = str(portNum) + '/' + str(userID)
+                conn.send(msg.encode('utf-8'))
     elif reqArr[0] == 'SIGN_UP':
         print(f"{addr} is requesting sign up...")
 
@@ -120,8 +124,9 @@ def handleConn(conn, addr):
             newUser = [email , hashedPass , newID]
             jsonData['users'].append(newUser)
 
-            # Write the updated data back to the JSON file
-            writeJSON('userCredentials.json', jsonData)
+            with lock:
+                # Write the updated data back to the JSON file
+                writeJSON('userCredentials.json', jsonData)
 
             # Notify user
             conn.send(b'SIGNUP_COMPLETE')
@@ -131,6 +136,8 @@ def handleConn(conn, addr):
     conn.close()
 
 def main():
+    global lock
+
     # Open connection on masterServer port
     masterSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     masterSocket.bind(('localhost', 8888))
@@ -141,7 +148,7 @@ def main():
     while True:
         # Start the connection handling thread when a connection is established
         conn, addr = masterSocket.accept()
-        connThread = threading.Thread(target=handleConn, args=(conn, addr))
+        connThread = threading.Thread(target=handleConn, args=(conn, addr, lock))
         connThread.start()
 
 
@@ -153,7 +160,6 @@ if __name__ == "__main__":
 # User creates directory structure
 ###############################
 # Use locks???
-    # MasterServer global variables
     # Server database files
 ###############################
 # Test all cases/bug fix
