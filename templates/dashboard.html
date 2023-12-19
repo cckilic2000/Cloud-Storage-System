@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../static/dashboard.css">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Welcome to the Dashboard</h1>
+    <div class="top-right">
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+    
+    <!-- List, Download, Delete, Rename Files -->
+    <h2>Your Files</h2>
+    <table>
+        <tr>
+            <th>File Name</th>
+            <th>Actions</th>
+        </tr>
+        {% for file in files %}
+        <tr>
+            <td>{{ file }}</td>
+            <td>
+                <!-- Download Link -->
+                <a href="{{ url_for('download', filename=file) }}">Download</a>
+                <!-- Delete Button -->
+                <form method="post" action="{{ url_for('delete', filename=file) }}" style="display: inline;">
+                    <button type="submit">Delete</button>
+                </form>
+                <!-- Rename Form -->
+                <form method="post" action="{{ url_for('rename', filename=file) }}" style="display: inline;">
+                    <input type="text" name="new_name" placeholder="New name">
+                    <button type="submit">Rename</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+        <!-- Upload File -->
+        <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+            <h2>Upload File</h2>
+            <div class="upload-btn-wrapper">
+                <input type="file" name="file">
+            </div>
+                <button type="submit" class="btn">Upload</button>
+        </form>
+</body>
+</html>

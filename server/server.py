@@ -57,12 +57,9 @@ def handleClient(connection, address, lock):
     if requestArr[0] == 'UPLOAD':
         # Extract client ID
         clientID = requestArr[1]
-        
-        # Recieve filename
-        param = connection.recv(1024).decode('utf-8')
-        filenameAndSize = str(param).split('/')
-        filename = filenameAndSize[0]
-        fileSize = filenameAndSize[1]
+        filename = requestArr[2]
+        fileSize = requestArr[3]
+
         print(f"Client requested a file upload to server...")
         print(f"Filename: {filename}...")
 
@@ -92,9 +89,9 @@ def handleClient(connection, address, lock):
     elif requestArr[0] == 'DOWNLOAD':
         # Extract client ID
         clientID = requestArr[1]
-        
-        # Recieve filename and call send file func if file exist
-        filename = connection.recv(1024).decode('utf-8')
+        filename = requestArr[2]
+        print(clientID)
+        print(filename)
 
         if filename != 'size.json':
             print(f"Client requested a file download from server...")
@@ -140,9 +137,9 @@ def handleClient(connection, address, lock):
     elif requestArr[0] == 'DELETE':
         # Extract client ID
         clientID = requestArr[1]
+        filename = requestArr[2]
 
         # Recieve filename and call delete file func if file exist
-        filename = connection.recv(1024).decode('utf-8')
         print(f"Client requested a file delete from server...")
         print(f"Filename: {filename}...")
         path = '../database/' + str(clientID) + '/' + str(filename)
@@ -173,10 +170,10 @@ def handleClient(connection, address, lock):
     elif requestArr[0] == 'RENAME':
         # Extract client ID
         clientID = requestArr[1]
+        filenamesArr = []
+        filenamesArr.append(requestArr[2])
+        filenamesArr.append(requestArr[3])
 
-        # Receive filenames
-        filenames = connection.recv(1024).decode('utf-8')
-        filenamesArr = str(filenames).split('/')
         print(f"Client requested a file rename from server...")
         print(f"Filename: {filenamesArr[0]}, New Filename: {filenamesArr[1]}...")
         

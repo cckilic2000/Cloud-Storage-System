@@ -6,11 +6,8 @@ myID = "-1"
 
 def uploadFile(connection, filename, id):
     # Send client choice to server
-    msg = 'UPLOAD/' + str(id)
-    connection.send(msg.encode('utf-8'))
-    # Send filename and size to server
     size = int(os.path.getsize(filename))
-    msg = str(filename) + '/' + str(size)
+    msg = 'UPLOAD/' + str(id) + '/' + str(filename) + '/' + str(size)
     connection.send(msg.encode('utf-8'))
 
     response = connection.recv(1024).decode('utf-8')
@@ -27,10 +24,8 @@ def uploadFile(connection, filename, id):
 
 def downloadFile(connection, filename, id):
     # Send client choice to server
-    msg = 'DOWNLOAD/' + str(id)
+    msg = 'DOWNLOAD/' + str(id) + '/' + str(filename)
     connection.send(msg.encode('utf-8'))
-    # Send filename to server
-    connection.send(filename.encode('utf-8'))
 
     # Get the downloaded file if it exists
     response = connection.recv(1024).decode('utf-8')
@@ -68,10 +63,8 @@ def listFiles(connection, id):
 
 def deleteFile(connection, filename, id):
     # Send client choice to server
-    msg = 'DELETE/' + str(id)
+    msg = 'DELETE/' + str(id) + '/' + str(filename)
     connection.send(msg.encode('utf-8'))
-    # Send filename to server
-    connection.send(filename.encode('utf-8'))
     
     # Get the response from the server
     response = connection.recv(1024).decode('utf-8')
@@ -82,11 +75,8 @@ def deleteFile(connection, filename, id):
 
 def renameFile(connection, filename, newFilename, id):
     # Send client choice to server
-    msg = 'RENAME/' + str(id)
+    msg = 'RENAME/' + str(id) + '/' + str(filename) + '/' + str(newFilename)
     connection.send(msg.encode('utf-8'))
-    # Send filenames to server
-    filenames = str(filename) + '/' + str(newFilename)
-    connection.send(filenames.encode('utf-8'))
 
     # Get the response from the server
     response = connection.recv(1024).decode('utf-8')
